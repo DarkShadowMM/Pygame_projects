@@ -12,6 +12,11 @@ class Generic(pygame.sprite.Sprite):
         self.z = z
         self.hitbox = self.rect.copy()
 
+class Interaction(Generic):
+    def __init__(self, pos, size, groups,name):
+        surf=pygame.Surface(size)
+        super().__init__(pos, surf, groups)
+        self.name=name
 class Water(Generic):
     def __init__(self, pos, frames, groups):
         self.frames = frames
@@ -39,58 +44,70 @@ class Wildflower(Generic):
         self.hitbox = self.rect.copy().inflate(-20, -self.rect.height * 0.9)
 
 class Tree(Generic):
-    def __init__(self, pos, surf, groups, name):
+    def __init__(self, pos, surf, groups, name, player_add):
         super().__init__(pos, surf, groups)
         
         # Tree attributes
         self.name = name
         self.health = 5
         self.alive = True
-        stump_path = f'sproutland-main/graphics/stumps/{"small" if name == "small" else "large"}.png'
+        stump_path = f'sproutland-main/graphics/stumps/{"small" if name == "Small" else "large"}.png'
         self.stump_surf = pygame.image.load(stump_path).convert_alpha()
         self.invul_timer = Timer(200)
 
         # Apples
-        self.apple_surf = pygame.image.load('sproutland-main/graphics/fruit/apple.png')
+        self.apple_surf = pygame.image.load('sproutland-main/graphics/fruit/apple.png').convert_alpha()
         self.apple_pos = APPLE_POS[name]
         self.apple_sprites = pygame.sprite.Group()
+        self.player_add = player_add
+
+        # Create apples on the tree
         self.create_fruit()
     
     def create_fruit(self):
-    # Create apples at the defined positions with lower chance
+        """Create apples on the tree with random chance and correct z-layer."""
         for pos in self.apple_pos:
-            if randint(0, 10) > 8:  # Only 20% chance to spawn each apple
+            if randint(0, 10) > 8:  # 80% chance to spawn each apple
                 x = self.rect.left + pos[0]
                 y = self.rect.top + pos[1]
-                Apple((x, y), self.apple_surf, [self.apple_sprites, self.groups()[0]])
+                # apples visible above trees
+                Apple((x, y), self.apple_surf, [self.apple_sprites, *self.groups()], z=LAYERS['fruit'])
 
     def damage(self):
-        # Damaging the tree
+        """Handle when the tree is hit by the axe."""
         self.health -= 1
 
-        # Remove an apple
+        # Remove an apple and add to inventory
         if len(self.apple_sprites.sprites()) > 0:
             random_apple = choice(self.apple_sprites.sprites())
+            # particle effect when apple drops
             Particle(
                 pos=random_apple.rect.topleft,
                 surf=random_apple.image,
                 groups=self.groups(),
                 z=LAYERS['fruit'])
+            self.player_add('apple')
             random_apple.kill()
 
     def check_death(self):
-        if self.health <= 0:
+        """Change image to stump if tree dies."""
+        if self.health <= 0 and self.alive:
+            # Particle(self.rect.topleft, self.image, self.groups()[0], LAYERS['fruit'],300)
             self.alive = False
             self.image = self.stump_surf
             self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
+            self.player_add('wood')
+            # Remove all apples when tree is dead
+            for apple in self.apple_sprites.sprites():
+                apple.kill()
     
     def update(self, dt):
         self.invul_timer.update()
         self.check_death()
 
 class Apple(Generic):
-    def __init__(self, pos, surf, groups):
-        super().__init__(pos, surf, groups, LAYERS['fruit'])
+    def __init__(self, pos, surf, groups, z=LAYERS['fruit']):
+        super().__init__(pos, surf, groups, z)
         self.hitbox = self.rect.copy().inflate(-15, -15)
 
 class Particle(Generic):
@@ -98,8 +115,18 @@ class Particle(Generic):
         super().__init__(pos, surf, groups, z)
         self.start_time = pygame.time.get_ticks()
         self.duration = duration
+        
+        # ДОБАВЛЕНО: Инициализация для движения частицы
+        self.pos = pygame.math.Vector2(self.rect.topleft)
+        self.velocity = -80 # Движение вверх
     
     def update(self, dt):
+        """Particle disappears after duration milliseconds."""
         current_time = pygame.time.get_ticks()
+        
+        # ДОБАВЛЕНО: Обновление позиции
+        self.pos.y += self.velocity * dt 
+        self.rect.topleft = (round(self.pos.x), round(self.pos.y))
+        
         if current_time - self.start_time > self.duration:
             self.kill()
