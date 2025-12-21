@@ -6,7 +6,7 @@ from timer import Timer
 
 class Player(pygame.sprite.Sprite):
     
-    def __init__(self, pos, group,collision_sprites,tree_sprites,interaction,soil_layer):
+    def __init__(self, pos, group,collision_sprites,tree_sprites,interaction,soil_layer,toggle_shop):
         super().__init__(group)
 
         self.import_assets()
@@ -48,11 +48,19 @@ class Player(pygame.sprite.Sprite):
             'tomato':0
             }
         
+        self.seed_inventory={
+            'corn':  5,
+            'tomato':5
+            }
+        self.money=200
+        
         self.tree_sprites=tree_sprites
         self.interaction=interaction
         
         self.sleep=False
         self.soil_layer=soil_layer
+        self.toggle_shop=toggle_shop
+        
         
     def use_tool(self):
         
@@ -74,7 +82,9 @@ class Player(pygame.sprite.Sprite):
             
            
     def use_seed(self):
-        self.soil_layer.plant_seed(self.target_pos,self.selected_seed)
+        if self.seed_inventory[self.selected_seed]>0:
+            self.seed_inventory[self.selected_seed]-=1
+            self.soil_layer.plant_seed(self.target_pos,self.selected_seed)
         
     def import_assets(self):
             base_path = os.path.dirname(__file__)  
@@ -148,10 +158,11 @@ class Player(pygame.sprite.Sprite):
                 
             
             if keys[pygame.K_RETURN]:
+                self.toggle_shop()
                 collided_interaction_sprite=pygame.sprite.spritecollide(self, self.interaction, False)
                 if collided_interaction_sprite:
                     if collided_interaction_sprite[0].name=='Trader':
-                        pass
+                        self.toggle_shop()
                 else:
                     self.status='left_idle'
                     self.sleep=True
