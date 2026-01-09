@@ -5,20 +5,45 @@ from sprites import Generic
 from random import randint,choice
 
 
+
 class Sky:
     def __init__(self):
         self.display_surface = pygame.display.get_surface()
         self.full_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.start_color = [255, 255, 255]
-        self.end_color = (38, 101, 189)
+        self.start_color = [255, 255, 255] # Начинаем с полного дня
+        
+        # Этапы изменения цвета: [R, G, B]
+        self.stages = [
+            [255, 170, 120], # 0: Закат (оранжевый)
+            [38, 101, 189],  # 1: Ночь (темно-синий)
+            [255, 230, 180], # 2: Рассвет (нежно-желтый/розовый)
+            [255, 255, 255]  # 3: День (белый свет)
+        ]
+        self.current_stage = 0
+        self.transition_speed = 3 # Скорость изменения (можно подстроить под себя)
 
     def display(self, dt):
-        for index, value in enumerate(self.end_color):
-            if self.start_color[index] > value:
-                self.start_color[index] -= 2 * dt
+        target_color = self.stages[self.current_stage]
+        
+        # Проверяем, достигли ли мы текущего целевого цвета
+        at_target = True
+        for index, value in enumerate(target_color):
+            if abs(self.start_color[index] - value) > 1:
+                at_target = False
+                # Плавное движение к целевому значению
+                if self.start_color[index] > value:
+                    self.start_color[index] -= self.transition_speed * dt
+                else:
+                    self.start_color[index] += self.transition_speed * dt
+        
+        # Если текущий этап завершен, переходим к следующему
+        # Цикл будет идти бесконечно: Закат -> Ночь -> Рассвет -> День -> Закат...
+        if at_target:
+            self.current_stage = (self.current_stage + 1) % len(self.stages)
+
         self.full_surf.fill(self.start_color)
         self.display_surface.blit(self.full_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-
+# Keep your Drop and Rain classes below as they were...
 class Drop(Generic):
     def __init__(self, surf, pos, moving, groups, z):
 
