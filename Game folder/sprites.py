@@ -60,6 +60,8 @@ class Tree(Generic):
         self.apple_pos = APPLE_POS[name]
         self.apple_sprites = pygame.sprite.Group()
         self.player_add = player_add
+        
+        self.axe_sound=pygame.mixer.Sound('sproutland-main/audio/axe.mp3')
 
         # Create apples on the tree
         self.create_fruit()
@@ -76,7 +78,9 @@ class Tree(Generic):
     def damage(self):
         """Handle when the tree is hit by the axe."""
         self.health -= 1
-
+        
+        self.axe_sound.play()
+        
         # Remove an apple and add to inventory
         if len(self.apple_sprites.sprites()) > 0:
             random_apple = choice(self.apple_sprites.sprites())
