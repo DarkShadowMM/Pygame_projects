@@ -28,6 +28,11 @@ class Level:
         self.soil_layer.raining=self.raining
         self.sky=Sky()
         self.menu=Menu(self.player, self.toggle_shop)
+        self.success=pygame.mixer.Sound('sproutland-main/audio/success.wav')
+        self.success.set_volume(0.3)
+        
+        # self.music=pygame.mixer.Sound("sproutland-main/audio/music.mp3")
+        # self.music.play(loops=-1)
         
         
 
@@ -35,7 +40,7 @@ class Level:
     
         
     
-        tmx_data=load_pygame('sproutland-main/data/swmap.tmx')
+        tmx_data=load_pygame('sproutland-main/data/new_map.tmx')
         
         # House
         for layer in ['HouseFloor','HouseFurnitureBottom']:
@@ -104,6 +109,7 @@ class Level:
 
     def player_add(self,item):
         self.player.item_inventory[item]+=1
+        self.success.play()
     
     def toggle_shop(self):
         self.shop_active=not self.shop_active
@@ -144,26 +150,24 @@ class Level:
                     self.soil_layer.grid[plant.rect.centery//TILE_SIZE][plant.rect.centerx//TILE_SIZE].remove('P')
         
     def reset(self):
-        
         self.soil_layer.update_plants()
-        
         self.soil_layer.remove_water()
-        self.raining=randint(0,10)>3
-        self.soil_layer.raining=self.raining
+        self.raining = randint(0, 10) > 3
+        self.soil_layer.raining = self.raining
         
         if self.raining:
             self.soil_layer.water_all()
         
         for tree in self.tree_sprites.sprites():
-            # ИСПРАВЛЕНИЕ: Проверяем, является ли объект деревом (имеет ли он атрибут apple_sprites)
             if hasattr(tree, 'apple_sprites'):
-                # Теперь мы уверены, что tree является объектом Tree
                 for apple in tree.apple_sprites.sprites():
                     apple.kill()
                 tree.create_fruit()
                 
-        self.sky.start_color=  [255,255,255]      
-                
+        # Reset the sky logic for the new day
+        self.sky.start_color = [255, 255, 255]
+        self.sky.current_stage = 2 # Start back at the first transition (Sunset)  # Сброс к первому этапу (закату)
+                    
 class CameraGroup(pygame.sprite.Group):
     def __init__(self):
         super().__init__()
