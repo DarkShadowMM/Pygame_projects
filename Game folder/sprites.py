@@ -120,17 +120,30 @@ class Particle(Generic):
         self.start_time = pygame.time.get_ticks()
         self.duration = duration
         
-        # ДОБАВЛЕНО: Инициализация для движения частицы
+        # Ensure pos is a Vector2 for accurate movement calculations
         self.pos = pygame.math.Vector2(self.rect.topleft)
-        self.velocity = -80 # Движение вверх
+        # Negative Y velocity moves upwards
+        self.velocity = -80 
     
     def update(self, dt):
-        """Particle disappears after duration milliseconds."""
+        """Particle moves upwards and disappears after duration."""
         current_time = pygame.time.get_ticks()
         
-        # ДОБАВЛЕНО: Обновление позиции
+        # Update position based on velocity and delta time
         self.pos.y += self.velocity * dt 
         self.rect.topleft = (round(self.pos.x), round(self.pos.y))
         
         if current_time - self.start_time > self.duration:
             self.kill()
+            
+# Вставьте это в конец sprites.py
+
+class PoisonMushroom(Generic):
+    def __init__(self, pos, surf, groups):
+        super().__init__(pos, surf, groups, z=LAYERS['main'])
+        # Уменьшаем хитбокс, чтобы игрок должен был наступить прямо на гриб
+        self.hitbox = self.rect.copy().inflate(-20, -20)
+        
+    def update(self, dt):
+        # Здесь можно добавить анимацию пульсации, если захотите
+        pass
